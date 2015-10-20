@@ -1,0 +1,36 @@
+{
+    "_basic": {
+        "productCode": "brithon-crmx",
+        "packageName": "brithon-crmx",
+        "productName": "Brithon CRMX",
+        "templates": [
+            "birchpress.inc.php",
+
+            "brithon-crmx.php",
+            "package.php",
+            "readme.txt"
+        ],
+        "wpVersionRequires": "3.7",
+        "wpVersionTested": "4.2",
+        "updaterApiUrl": "http://www.brithon.com/"
+    },
+
+    "editions": {
+        "developer": {
+            "addons": [
+                "sso"
+            ],
+            "libs": {
+                "php": [
+                    "index.php"
+                ]
+            }
+        },
+
+        "multisite": {
+            "addons": [
+                "sso"
+            ]
+        }
+    }
+}
