@@ -1,0 +1,3 @@
+[submodule "birchpress"]
+	path = birchpress
+	url = https://github.com/birchpress/birchpress.git
