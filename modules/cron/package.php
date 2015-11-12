@@ -1,5 +1,7 @@
 <?php
 
+use google\appengine\api\taskqueue\PushTask;
+
 birch_ns( 'brithoncrmx.cron', function( $ns ) {
 
 		global $brithoncrmx;
@@ -36,9 +38,14 @@ birch_ns( 'brithoncrmx.cron', function( $ns ) {
 
 			foreach ( $blog_ids as $blog_id ) {
 				switch_to_blog( $blog_id );
-				$cron_url = home_url().'/wp-cron.php';
-
-				wp_remote_get( $cron_url );
+				if ( isset( $_SERVER['APPLICATION_ID'] ) ) {
+					$cron_path = get_blog_details( $blog )->path . 'wp-cron.php';
+					$task = new PushTask( $cron_path, array(), array( 'method' => 'GET' ) );
+					$task_name = $task->add( 'appointments' );
+				} else {
+					$cron_url = home_url() . '/wp-cron.php';
+					wp_remote_get( $cron_url );
+				}
 			}
 		};
 
