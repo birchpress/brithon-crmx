@@ -17,19 +17,49 @@ birch_ns( 'brithoncrmx.sso.model', function( $ns ) {
 
         $ns->wp_init = function() use ( $ns, $brithoncrmx ) {
             global $birchpress;
+            if ( is_main_site() ) {;
 
-            if ( is_main_site() ) {
                 add_action( 'wp_ajax_nopriv_brithoncrmx_login', array( $ns, 'user_login' ) );
                 add_action( 'wp_ajax_nopriv_brithoncrmx_register', array( $ns, 'user_register' ) );
                 add_action( 'wp_ajax_nopriv_brithoncrmx_errorhandler', array( $ns, 'remote_error_handler' ) );
                 add_action( 'wp_ajax_brithoncrmx_errorhandler', array( $ns, 'remote_error_handler' ) );
+                add_action( 'wp_ajax_brithoncrmx_test_get_mainsite_url', array( $ns, 'test_get_mainsite_url' ) );
+                add_action( 'wp_ajax_brithoncrmx_test_validate_token', array( $ns, 'test_validate_token' ) );
+                add_action( 'wp_ajax_brithoncrmx_test_decrypt', array( $ns, 'test_decrypt' ) );
+                add_action( 'wp_ajax_brithoncrmx_test_requests', array( $ns, 'test_requests' ) );
             }
+        };
+
+        $ns->test_get_mainsite_url = function() use ( $ns ) {
+            die(json_encode(array('url' => $ns->get_mainsite_url())));
+        };
+
+        $ns->test_validate_token = function() use ( $ns ) {
+            $token = $_POST['token'];
+            $time = $_POST['time'];
+
+            die(json_encode(array('status' => $ns->perform_server_validation($token, $time))));
+        };
+
+        $ns->test_decrypt = function() use ( $ns ) {
+            $content = $_POST['content'];
+            $key = $_POST['key'];
+
+            die(json_encode(array('text' => $ns->decrypt($content, $key))));
+        };
+
+        $ns->test_requests = function() use ( $ns ) {
+            $url = $_POST['url'];
+            $method = $_POST['method'];
+            $data = $_POST['data'];
+
+            die($ns->request($url, $method, $data));
         };
 
         $ns->get_product_name = function() use ( $ns, $brithoncrmx ) {
             $host = $_SERVER['HTTP_HOST'];
-            $components = explode('.', $host);
-            $product = explode('-', $components[0])[0];
+            $components = explode( '.', $host );
+            $product = explode( '-', $components[0] )[0];
 
             return $product;
         };
@@ -39,17 +69,27 @@ birch_ns( 'brithoncrmx.sso.model', function( $ns ) {
             return $hkey;
         };
 
+        $ns->get_iv = function( $size ) use ( $ns ) {
+            $str = '#$Scfg#562SdgdsrTd35DsxRvcs#@fds';
+            return substr( $str, 0, $size );
+        };
+
         $ns->perform_server_validation = function( $token, $timestamp ) use ( $ns ) {
             $expiration_seconds = 60;
             $hkey = $ns->get_hkey();
+            $product_name = $ns->get_product_name();
 
             $timestamp = intval( $timestamp );
 
             if ( $timestamp + $expiration_seconds < time() ) {
+                $ts = time();
+                echo "EXPIRED($ts).\n";
                 return false;
             }
 
-            if ( $token === hash_hmac( 'sha256', "$product_name-$timestamp", $hkey ) ) {
+            $answer = hash_hmac( 'sha256', "$product_name-$timestamp", $hkey );
+            echo "ANSWER=$answer\n";
+            if ( $token === $answer ) {
                 return true;
             }
 
@@ -57,8 +97,8 @@ birch_ns( 'brithoncrmx.sso.model', function( $ns ) {
         };
 
         $ns->decrypt = function( $string, $key ) use ( $ns ) {
-            $td = mcrypt_module_open( 'rijndael-256', '', 'cfb' );
-            $iv = mcrypt_create_iv( mcrypt_enc_get_iv_size( $td ), MCRYPT_DEV_RANDOM );
+            $td = mcrypt_module_open( 'rijndael-256', '', 'cfb', '' );
+            $iv = $ns->get_iv( mcrypt_enc_get_iv_size( $td ) );
             $key_size = mcrypt_enc_get_key_size( $td );
             $key = substr( md5( $key ), 0, $key_size );
 
@@ -85,7 +125,7 @@ birch_ns( 'brithoncrmx.sso.model', function( $ns ) {
                 $ns->return_error_msg( __( 'Invalid token', 'brithoncrmx' ) );
             }
 
-            $creds = json_decode( $ns->decrypt( $creds_str, $token ) ); 
+            $creds = json_decode( $ns->decrypt( $creds_str, $token ) );
 
             if ( !isset( $creds['user_login'] ) ) {
                 $ns->return_error_msg( __( 'Empty username!', 'brithoncrmx' ) );
@@ -117,22 +157,22 @@ birch_ns( 'brithoncrmx.sso.model', function( $ns ) {
 
             $creds = json_decode( $ns->decrypt( $creds_str, $token ) );
 
-            if ( ! isset($creds['user_login']) ) {
+            if ( ! isset( $creds['user_login'] ) ) {
                 $ns->return_error_msg( __( 'Empty username!', 'brithoncrmx' ) );
             }
-            if ( ! isset($creds['user_pass']) ) {
+            if ( ! isset( $creds['user_pass'] ) ) {
                 $ns->return_error_msg( __( 'Empty password!', 'brithoncrmx' ) );
             }
-            if ( ! isset($creds['user_email']) ) {
+            if ( ! isset( $creds['user_email'] ) ) {
                 $ns->return_error_msg( __( 'Empty email address!', 'brithoncrmx' ) );
             }
-            if ( ! isset($creds['first_name']) ) {
+            if ( ! isset( $creds['first_name'] ) ) {
                 $ns->return_error_msg( __( 'First name required!', 'brithoncrmx' ) );
             }
-            if ( ! isset($creds['last_name']) ) {
+            if ( ! isset( $creds['last_name'] ) ) {
                 $ns->return_error_msg( __( 'Last name required!', 'brithoncrmx' ) );
             }
-            if ( ! isset($creds['organization']) ) {
+            if ( ! isset( $creds['organization'] ) ) {
                 $ns->return_error_msg( __( 'Organization required!', 'brithoncrmx' ) );
             }
 
@@ -141,7 +181,7 @@ birch_ns( 'brithoncrmx.sso.model', function( $ns ) {
             if ( ! is_wp_error( $user_id ) ) {
                 add_user_meta( $user_id, 'organization', $creds['organization'] );
 
-                $creds = array_merge($creds, array('remebmer' => true));
+                $creds = array_merge( $creds, array( 'remebmer' => true ) );
 
                 $usr = wp_signon( $creds, false );
 
@@ -152,11 +192,50 @@ birch_ns( 'brithoncrmx.sso.model', function( $ns ) {
             }
         };
 
-        $ns->request = function( $url, $method, $data ) use ( $ns ) {
+        $ns->get_mainsite_url = function( $local_port = '8080' ) use ( $ns ) {
+            $host = $_SERVER['HTTP_HOST'];
+            $components = explode( '.', $host, 2 );
+            $subdomains = explode( '-', $components[0] );
+            $domain = $components[1];
+            $env = '';
+            $result = '';
+
+            if ( count( $subdomains ) < 2 ) {
+                $env = 'PROD';
+            } else {
+                if ( $subdomains[1] === 'dev' ) {
+                    $env = 'DEV';
+                }
+                if ( $subdomains[1] === 'local' ) {
+                    $env = 'LOCAL';
+                }
+            }
+
+            switch ( $env ) {
+            case 'PROD':
+                $result = "https://www.$domain";
+                break;
+
+            case 'DEV':
+                $result = "https://www-dev.$domain";
+
+            case 'LOCAL':
+                $result = "http://www-local.$domain:$local_port";
+                break;
+
+            default:
+                $result = "https://www.$domain";
+                break;
+            }
+
+            return $result;
+        };
+
+        $ns->request = function( $url, $method, $data, $accept = '*/*' ) use ( $ns ) {
             $context = array(
                 'http' => array(
                     'method' => $method,
-                    'header' => '',
+                    'header' => "Accept: $accept",
                     'content' => $data
                 )
             );
