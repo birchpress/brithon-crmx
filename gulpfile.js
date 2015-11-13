@@ -1,33 +1,16 @@
 'use strict';
 
-var gulp = require('gulp');
+const gulp = require('gulp');
 
-var builder = require('birchpress-builder')(gulp);
+const builder = require('birchpress-builder')(gulp);
 
-var productConfig = {
+const productConfig = {
 
-  coreMainSrcExclusion: [
-    // internal dev files
-    '!package.json',
-    '!gulpfile.js',
-    '!README.md',
-    '!phpunit.xml',
-    '!node_modules{,/**}',
-    '!test{,/**}',
-    '!__tests__{,/**}',
-    '!buildfiles{,/**}',
-    '!dist{,/**}',
-
-    // the framework
-    '!birchpress{,/**}',
-
-    // independent filter rules
-    '!modules{,/**}',
-    '!lib{,/**}',
-
-    // publish to wordpress
-    '!screenshots{,/**}',
-    '!readme.txt'
+  coreMainSrc: [
+    'index.php',
+    'brithon-crmx.php',
+    'loader.php',
+    'package.php'
   ],
 
   corePublishSrc: [
