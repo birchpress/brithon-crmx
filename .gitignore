@@ -1,6 +1,5 @@
 node_modules
 *.bundle.js
-dist
 .*~
 .DS_Store
 dist
