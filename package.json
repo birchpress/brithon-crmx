@@ -40,7 +40,9 @@
     "birchpress": "global:birchpress"
   },
   "pkgify": {
-    "packages": {}
+    "packages": {
+      "brithoncrmx/sso": "./modules/sso/assets/js"
+    }
   },
   "scripts": {
     "gulp": "gulp"
