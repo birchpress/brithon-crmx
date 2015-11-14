@@ -19,12 +19,7 @@
         "developer": {
             "addons": [
                 "sso"
-            ],
-            "libs": {
-                "php": [
-                    "index.php"
-                ]
-            }
+            ]
         },
 
         "multisite": {

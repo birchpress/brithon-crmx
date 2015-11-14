@@ -1,0 +1,57 @@
+{
+  "name": "brithon-crmx",
+  "description": "",
+  "version": "1.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/birchpress/brithon-crmx.git"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "babel-preset-react": "6.1.18",
+    "babelify": "7.2.0",
+    "birchpress-builder": "https://github.com/birchpress/builder.git#0801b6d",
+    "browserify-shim": "3.8.11",
+    "gulp": "3.9.0",
+    "immutable": "3.7.5",
+    "pkgify": "1.0.3",
+    "pofile": "1.0.2",
+    "react": "0.13.3",
+    "react-immutable-render-mixin": "0.8.1"
+  },
+  "browserify": {
+    "transform": [
+      [
+        "babelify",
+        {
+          "presets": [
+            "react"
+          ]
+        }
+      ],
+      "browserify-shim",
+      "pkgify"
+    ]
+  },
+  "browserify-shim": {
+    "jquery": "global:jQuery",
+    "immutable": "global:Immutable",
+    "react": "global:React",
+    "birchpress": "global:birchpress"
+  },
+  "pkgify": {
+    "packages": {
+      "brithoncrmx/sso": "./modules/sso/assets/js"
+    }
+  },
+  "scripts": {
+    "gulp": "gulp"
+  },
+  "private": true,
+  "author": "Brithon Inc.",
+  "license": "Commercial",
+  "bugs": {
+    "url": "https://github.com/birchpress/brithon-crmx/issues"
+  },
+  "homepage": "https://github.com/birchpress/brithon-crmx"
+}
