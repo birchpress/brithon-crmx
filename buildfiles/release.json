@@ -18,7 +18,7 @@
     "editions": {
         "developer": {
             "addons": [
-                "sso"
+                "sso", "cron"
             ],
             "libs": {
                 "php": [
@@ -29,7 +29,7 @@
 
         "multisite": {
             "addons": [
-                "sso"
+                "sso", "cron"
             ]
         }
     }

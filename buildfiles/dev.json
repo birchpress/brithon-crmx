@@ -18,13 +18,13 @@
     "editions": {
         "developer": {
             "addons": [
-                "sso"
+                "sso", "cron"
             ]
         },
 
         "multisite": {
             "addons": [
-                "sso"
+                "sso", "cron"
             ]
         }
     }
