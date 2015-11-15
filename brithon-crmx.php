@@ -15,6 +15,7 @@ if ( defined( 'ABSPATH' ) && ! function_exists( 'brithoncrmx_main' ) ) {
     function brithoncrmx_main() {
 
         require_once 'loader.php';
+        include 'includes/ChromePhp.php';
 
         brithoncrmx_load( array(
                 'plugin_file_path' => __FILE__,
