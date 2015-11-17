@@ -17,8 +17,13 @@ birch_ns( 'brithoncrmx.sso.model', function( $ns ) {
 
         $ns->wp_init = function() use ( $ns, $brithoncrmx ) {
             global $birchpress;
-            if ( is_main_site() ) {;
 
+            $status = $ns->verfiy_login_state();
+            if ( !$status ) {
+                wp_logout();
+            }
+
+            if ( is_main_site() ) {
                 add_action( 'wp_ajax_nopriv_brithoncrmx_login', array( $ns, 'user_login' ) );
                 add_action( 'wp_ajax_nopriv_brithoncrmx_register', array( $ns, 'user_register' ) );
                 add_action( 'wp_ajax_nopriv_brithoncrmx_errorhandler', array( $ns, 'remote_error_handler' ) );
@@ -34,9 +39,14 @@ birch_ns( 'brithoncrmx.sso.model', function( $ns ) {
             return $product;
         };
 
-        $ns->get_hkey = function() use ( $ns, $brithoncrmx ) {
-            $hkey = '_sEcR37_-t0KEn';
+        $ns->get_hkey = function() use ( $ns ) {
+            $hkey = '__bR17h0n-#sEcR37_-t0KEn';
             return $hkey;
+        };
+
+        $ns->get_common_key = function() use ( $ns ) {
+            $common_key = '#@Br1TH0n-C00ki3_KEY#@DSAF';
+            return $common_key;
         };
 
         $ns->get_iv = function( $size ) use ( $ns ) {
@@ -45,14 +55,14 @@ birch_ns( 'brithoncrmx.sso.model', function( $ns ) {
         };
 
         $ns->perform_server_validation = function( $token, $timestamp ) use ( $ns ) {
-            $expiration_seconds = 60;
+            $expiration_seconds = 600;
             $hkey = $ns->get_hkey();
             $product_name = $ns->get_product_name();
 
             $timestamp = intval( $timestamp );
 
             if ( $timestamp + $expiration_seconds < time() ) {
-                $ts = time();
+                echo 'expired.';
                 return false;
             }
 
@@ -81,45 +91,39 @@ birch_ns( 'brithoncrmx.sso.model', function( $ns ) {
             return $result;
         };
 
-        $ns->user_login = function() use ( $ns ) {
-            if ( !isset( $_POST['token'] ) ) {
-                $ns->return_error_msg( __( 'Empty validation token!', 'brithoncrmx' ) );
+        $ns->sign_cookie = function( $title, $data, $remebmer ) use ( $ns ) {
+            if ( gettype( $data ) == 'array' ) {
+                $data = json_encode( $data );
             }
 
-            $token = $_POST['token'];
-            $creds_str = $_POST['creds'];
-            $timestamp = $POST['time'];
-
-            if ( !$ns->perform_server_validation( $token, $timestamp ) ) {
-                $ns->return_error_msg( __( 'Invalid token', 'brithoncrmx' ) );
+            $expire = 0;
+            if ( $remebmer ) {
+                $expire = time() + 86400 * 30;
             }
 
-            $creds = json_decode( $ns->decrypt( $creds_str, $token ) );
-
-            if ( !isset( $creds->user_login ) ) {
-                $ns->return_error_msg( __( 'Empty username!', 'brithoncrmx' ) );
-            }
-            if ( !isset( $creds->user_password ) ) {
-                $ns->return_error_msg( __( 'Empty password!', 'brithoncrmx' ) );
-            }
-            if ( !isset( $creds->remember ) ) {
-                $creds->remebmer = false;
-            }
-
-            $login_data = array(
-                'user_login' => $creds->user_login,
-                'user_password' => $creds->user_password,
-                'remember' => $creds->remebmer
-            );
-
-            $user = wp_signon( $creds, false );
-            if ( is_wp_error( $user ) ) {
-                $ns->return_error_msg( $user->get_error_message() );
-            }
-
-            die( json_encode( $user ) );
+            return setcookie( $title, $data, $expire, '/', '.brithon.com', false, true );
         };
 
+        $ns->verfiy_login_state = function() use ( $ns ) {
+            if ( !isset( $_COOKIE['BRITHON_USER'] ) ) {
+                return false;
+            }
+
+            $user_cookie = $_COOKIE['BRITHON_USER'];
+            $result = $ns->decrypt( $user_cookie, $ns->get_common_key() );
+            $data = json_decode( $result );
+
+            if ( gettype( $data ) !== 'object' ) {
+                return false;
+            }
+
+            $credential = $data->creds;
+            $key = $data->key;
+            $credential = $ns->decrypt( $credential, $key );
+            $credential = json_decode( $credential, true );
+
+            return wp_signon( $credential );
+        };
 
         $ns->user_register = function() use ( $ns, $brithoncrmx ) {
 
