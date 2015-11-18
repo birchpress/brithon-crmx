@@ -16,7 +16,6 @@
     "immutable": "3.7.5",
     "pkgify": "1.0.3",
     "pofile": "1.0.2",
-    "react": "0.13.3",
     "react-immutable-render-mixin": "0.8.1"
   },
   "browserify": {
