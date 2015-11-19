@@ -6,14 +6,14 @@ birch_ns( 'brithoncrmx.cron', function( $ns ) {
 
 		global $brithoncrmx;
 
-		$ns->init = function() use ( $ns, $birthoncrmx ) {
+		$ns->init = function() use ( $ns, $brithoncrmx ) {
 			add_action( 'init', array( $ns, 'wp_init' ) );
 			add_action( 'admin_init', array( $ns, 'wp_admin_init' ) );
 
 			add_filter( 'cron_schedules', array( $ns, 'add_blog_cron_interval' ) );
 			add_action( 'brithoncrmx.cron.trigger_blog_cron', array( $ns, 'trigger_blog_cron' ) );
-			register_activation_hook( $brithoncrmx->get_plugin_file_path(), array( $ns, 'schedule_blog_cron' ) );
-			register_deactivation_hook( $brithoncrmx->get_plugin_file_path(), array( $ns, 'unschedule_blog_cron' ) );
+			register_activation_hook( $brithoncrmx->plugin_file_path(), array( $ns, 'schedule_blog_cron' ) );
+			register_deactivation_hook( $brithoncrmx->plugin_file_path(), array( $ns, 'unschedule_blog_cron' ) );
 		};
 
 		$ns->wp_init = function() use ( $ns ) {};
