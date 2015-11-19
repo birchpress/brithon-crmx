@@ -6,15 +6,19 @@ birch_ns( 'brithoncrmx.cron', function( $ns ) {
 
 		global $brithoncrmx;
 
-		$ns->init = function() use ( $ns ) {
+		$ns->init = function() use ( $ns, $birthoncrmx ) {
 			add_action( 'init', array( $ns, 'wp_init' ) );
 			add_action( 'admin_init', array( $ns, 'wp_admin_init' ) );
+
+			add_filter( 'cron_schedules', array( $ns, 'add_blog_cron_interval' ) );
+			add_action( 'brithoncrmx.cron.trigger_blog_cron', array( $ns, 'trigger_blog_cron' ) );
+			register_activation_hook( $brithoncrmx->get_plugin_file_path(), array( $ns, 'schedule_blog_cron' ) );
+			register_deactivation_hook( $brithoncrmx->get_plugin_file_path(), array( $ns, 'unschedule_blog_cron' ) );
 		};
 
-		$ns->wp_init = function() use ( $ns ) {
-			add_filter( 'cron_schedules', array( $ns, 'add_blog_cron_interval' ) );
-			add_action( 'wp', array( $ns, 'schedule_blog_cron' ) );
-		};
+		$ns->wp_init = function() use ( $ns ) {};
+
+		$ns->wp_admin_init = function() use ( $ns ) {};
 
 		$ns->add_blog_cron_interval = function( $schedules ) use ( $ns ) {
 			$schedules['blog_cron_interval'] = array(
@@ -29,6 +33,10 @@ birch_ns( 'brithoncrmx.cron', function( $ns ) {
 			if ( ! wp_next_scheduled( 'brithoncrmx.cron.trigger_blog_cron' ) ) {
 				wp_schedule_event( time(), 'blog_cron_interval', 'brithoncrmx.cron.trigger_blog_cron' );
 			}
+		};
+
+		$ns->unschedule_blog_cron = function() use ( $ns ) {
+			wp_clear_scheduled_hook( 'brithoncrmx.cron.trigger_blog_cron' );
 		};
 
 		$ns->trigger_blog_cron = function() use ( $ns ) {
@@ -48,7 +56,5 @@ birch_ns( 'brithoncrmx.cron', function( $ns ) {
 				}
 			}
 		};
-
-		$ns->wp_admin_init = function() use ( $ns ) {};
 
 	} );
