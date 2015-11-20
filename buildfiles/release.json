@@ -5,10 +5,7 @@
         "productName": "Brithon CRMX",
         "frameworkVersion":  "2.0",
         "templates": [
-            "birchpress.inc.php",
-
-            "brithon-crmx.php",
-            "package.php"
+            "brithon-crmx.php"
         ],
         "wpVersionRequires": "3.7",
         "wpVersionTested": "4.2",
@@ -18,7 +15,7 @@
     "editions": {
         "developer": {
             "addons": [
-                "sso"
+                "sso", "cron"
             ],
             "libs": {
                 "php": [
@@ -29,7 +26,7 @@
 
         "multisite": {
             "addons": [
-                "sso"
+                "sso", "cron"
             ]
         }
     }
