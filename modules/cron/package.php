@@ -46,6 +46,9 @@ birch_ns( 'brithoncrmx.cron', function( $ns ) {
 
 			foreach ( $blog_ids as $blog_id ) {
 				switch_to_blog( $blog_id );
+				if ( is_main_site() ) {
+					continue;
+				}
 				if ( isset( $_SERVER['APPLICATION_ID'] ) ) {
 					$cron_path = get_blog_details( $blog )->path . 'wp-cron.php';
 					$task = new PushTask( $cron_path, array(), array( 'method' => 'GET' ) );
