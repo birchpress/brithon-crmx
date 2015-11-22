@@ -122,7 +122,15 @@ birch_ns( 'brithoncrmx.sso.model', function( $ns ) {
             $credential = $ns->decrypt( $credential, $key );
             $credential = json_decode( $credential, true );
 
-            return wp_signon( $credential );
+            $current_user = wp_get_current_user();
+            if ( ! $current_user ) {
+                return wp_signon( $credential );
+            } else if ( $current_user->user_login !== $credential['user_login'] ) {
+                wp_logout();
+                return wp_signon( $credential );
+            } else {
+                return $current_user;
+            }
         };
 
         $ns->user_register = function() use ( $ns, $brithoncrmx ) {
