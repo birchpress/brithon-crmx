@@ -21,6 +21,7 @@ birch_ns( 'brithoncrmx.sso.model', function( $ns ) {
             $status = $ns->verfiy_login_state();
             if ( !$status ) {
                 wp_logout();
+                header('Refresh:0');
             }
 
             if ( is_main_site() ) {
@@ -124,9 +125,11 @@ birch_ns( 'brithoncrmx.sso.model', function( $ns ) {
 
             $current_user = wp_get_current_user();
             if ( ! $current_user ) {
+                header("Refresh:0");
                 return wp_signon( $credential );
             } else if ( $current_user->user_login !== $credential['user_login'] ) {
                 wp_logout();
+                header("Refresh:0");
                 return wp_signon( $credential );
             } else {
                 return $current_user;
