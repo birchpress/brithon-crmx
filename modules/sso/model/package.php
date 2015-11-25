@@ -21,7 +21,6 @@ birch_ns( 'brithoncrmx.sso.model', function( $ns ) {
             $status = $ns->verfiy_login_state();
             if ( !$status ) {
                 wp_logout();
-                header('Refresh:0');
             }
 
             if ( is_main_site() ) {
