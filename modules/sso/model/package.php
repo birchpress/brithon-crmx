@@ -114,13 +114,11 @@ birch_ns( 'brithoncrmx.sso.model', function( $ns ) {
             if ( ! $current_user && $user ) {
                 wp_set_current_user( $user->ID );
                 wp_set_auth_cookie( $user->ID, $credential->remember );
-                header( 'Refresh:0' );
                 return true;
             } else if ( $user && $current_user->user_login !== $credential->user_login ) {
                 wp_clear_auth_cookie();
                 wp_set_current_user( $user->ID );
                 wp_set_auth_cookie( $user->ID, $credential->remember );
-                header( 'Refresh:0' );
                 return true;
             } else {
                 return false;
