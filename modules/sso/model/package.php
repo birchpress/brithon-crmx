@@ -1,6 +1,5 @@
 <?php
 
-
 birch_ns( 'brithoncrmx.sso.model', function( $ns ) {
 
         global $brithoncrmx;
@@ -91,19 +90,6 @@ birch_ns( 'brithoncrmx.sso.model', function( $ns ) {
             return $result;
         };
 
-        $ns->sign_cookie = function( $title, $data, $remebmer ) use ( $ns ) {
-            if ( gettype( $data ) == 'array' ) {
-                $data = json_encode( $data );
-            }
-
-            $expire = 0;
-            if ( $remebmer ) {
-                $expire = time() + 86400 * 30;
-            }
-
-            return setcookie( $title, $data, $expire, '/', '.brithon.com', false, true );
-        };
-
         $ns->verfiy_login_state = function() use ( $ns ) {
             if ( !isset( $_COOKIE['BRITHON_USER'] ) ) {
                 return false;
@@ -120,18 +106,24 @@ birch_ns( 'brithoncrmx.sso.model', function( $ns ) {
             $credential = $data->creds;
             $key = $data->key;
             $credential = $ns->decrypt( $credential, $key );
-            $credential = json_decode( $credential, true );
+            $credential = json_decode( $credential );
 
             $current_user = wp_get_current_user();
-            if ( ! $current_user ) {
-                header( "Refresh:0" );
-                return wp_signon( $credential );
-            } else if ( $current_user->user_login !== $credential['user_login'] ) {
-                wp_logout();
-                header( "Refresh:0" );
-                return wp_signon( $credential );
+            $user = get_user_by( 'login', $credential->user_login );
+
+            if ( ! $current_user && $user ) {
+                wp_set_current_user( $user->ID );
+                wp_set_auth_cookie( $user->ID, $credential->remember );
+                header( 'Refresh:0' );
+                return true;
+            } else if ( $user && $current_user->user_login !== $credential->user_login ) {
+                wp_clear_auth_cookie();
+                wp_set_current_user( $user->ID );
+                wp_set_auth_cookie( $user->ID, $credential->remember );
+                header( 'Refresh:0' );
+                return true;
             } else {
-                return $current_user;
+                return false;
             }
         };
 
