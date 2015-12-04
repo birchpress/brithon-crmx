@@ -47,7 +47,8 @@
   },
   "pkgify": {
     "packages": {
-      "brithoncrmx/sso": "./modules/sso/assets/js"
+      "brithoncrmx/sso": "./modules/sso/assets/js",
+      "brithoncrmx/subscriptions": "./modules/subscriptions/assets/js"
     }
   },
   "scripts": {

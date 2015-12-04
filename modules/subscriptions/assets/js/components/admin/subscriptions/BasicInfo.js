@@ -16,22 +16,31 @@ var clazz = birchpress.provide('brithoncrmx.subscriptions.components.admin.subsc
 
   renderLayer: function(component) {
     if (!component.props.data) {
-      return <span />;
+      return (<span />);
     }
     var data = component.props.data;
+    return (
+      <div>
+        <p>
+          <b>Your name</b>:&nbsp;
+          { data.first_name }&nbsp;
+          { data.last_name }
+          <br /> <b>UID</b>:&nbsp;
+          { data.uid }
+          <br /> <b>Email</b>:&nbsp;
+          { data.email }
+          <br /> <b>Organization</b>:&nbsp;
+          { data.organization }
+        </p>
+      </div>
+      );
   },
 
   render: function(component) {
-    var registerForm = component.renderLayer();
-    return (<div id="reg" key="regdiv">
-              <a
-                 href="javascript:;"
-                 role="button"
-                 key="reglink"
-                 onClick={ component.handleClick }>
-                { component.__('Register') }
-              </a>
-              { registerForm }
+    var basicInfoPanel = component.renderLayer();
+    return (<div id="basic_info" key="basic_info_div">
+              <h3>Basic info</h3>
+              { basicInfoPanel }
             </div>
       );
   }
