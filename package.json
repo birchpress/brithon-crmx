@@ -10,19 +10,19 @@
   "devDependencies": {
     "babel-preset-react": "6.1.18",
     "babelify": "7.2.0",
-    "birchpress-builder": "https://github.com/birchpress/builder.git#7185885",
-    "browserify": "^12.0.1",
+    "birchpress-builder": "https://github.com/birchpress/builder.git#1.4.1",
+    "browserify": "12.0.1",
     "browserify-shim": "3.8.11",
     "event-stream": "3.3.2",
     "globby": "4.0.0",
     "gulp": "3.9.0",
     "gulp-logger": "0.0.2",
     "gulp-rename": "1.2.2",
-    "immutable": "3.7.5",
+    "gulp-sourcemaps": "1.6.0",
     "pkgify": "1.0.3",
     "pofile": "1.0.2",
-    "react": "0.13.3",
     "react-immutable-render-mixin": "0.8.1",
+    "vinyl-buffer": "1.0.0",
     "vinyl-source-stream": "1.1.0"
   },
   "browserify": {
@@ -47,7 +47,8 @@
   },
   "pkgify": {
     "packages": {
-      "brithoncrmx/sso": "./modules/sso/assets/js"
+      "brithoncrmx/sso": "./modules/sso/assets/js",
+      "brithoncrmx/subscriptions": "./modules/subscriptions/assets/js"
     }
   },
   "scripts": {

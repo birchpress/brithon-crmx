@@ -1,6 +1,5 @@
 <?php
 
-
 birch_ns( 'brithoncrmx.sso.model', function( $ns ) {
 
         global $brithoncrmx;
@@ -17,43 +16,24 @@ birch_ns( 'brithoncrmx.sso.model', function( $ns ) {
 
         $ns->wp_init = function() use ( $ns, $brithoncrmx ) {
             global $birchpress;
-            if ( is_main_site() ) {;
 
+            $status = $ns->verfiy_login_state();
+            if ( !$status ) {
+                wp_logout();
+            }
+            if ( $status && !wp_validate_auth_cookie() ) {
+                wp_set_auth_cookie( $status, true );
+            }
+
+            if ( is_main_site() ) {
                 add_action( 'wp_ajax_nopriv_brithoncrmx_login', array( $ns, 'user_login' ) );
                 add_action( 'wp_ajax_nopriv_brithoncrmx_register', array( $ns, 'user_register' ) );
                 add_action( 'wp_ajax_nopriv_brithoncrmx_errorhandler', array( $ns, 'remote_error_handler' ) );
                 add_action( 'wp_ajax_brithoncrmx_errorhandler', array( $ns, 'remote_error_handler' ) );
-                add_action( 'wp_ajax_brithoncrmx_test_get_mainsite_url', array( $ns, 'test_get_mainsite_url' ) );
-                add_action( 'wp_ajax_brithoncrmx_test_validate_token', array( $ns, 'test_validate_token' ) );
-                add_action( 'wp_ajax_brithoncrmx_test_decrypt', array( $ns, 'test_decrypt' ) );
-                add_action( 'wp_ajax_brithoncrmx_test_requests', array( $ns, 'test_requests' ) );
+                add_action( 'wp_ajax_brithoncrmx_get_user_info', array( $ns, 'get_user_info' ) );
+                add_action( 'wp_ajax_brithoncrmx_get_user_subscriptions', array( $ns, 'get_user_subscriptions' ) );
+                add_action( 'wp_ajax_brithoncrmx_get_user_order', array( $ns, 'get_user_order' ) );
             }
-        };
-
-        $ns->test_get_mainsite_url = function() use ( $ns ) {
-            die(json_encode(array('url' => $ns->get_mainsite_url())));
-        };
-
-        $ns->test_validate_token = function() use ( $ns ) {
-            $token = $_POST['token'];
-            $time = $_POST['time'];
-
-            die(json_encode(array('status' => $ns->perform_server_validation($token, $time))));
-        };
-
-        $ns->test_decrypt = function() use ( $ns ) {
-            $content = $_POST['content'];
-            $key = $_POST['key'];
-
-            die(json_encode(array('text' => $ns->decrypt($content, $key))));
-        };
-
-        $ns->test_requests = function() use ( $ns ) {
-            $url = $_POST['url'];
-            $method = $_POST['method'];
-            $data = $_POST['data'];
-
-            die($ns->request($url, $method, $data));
         };
 
         $ns->get_product_name = function() use ( $ns, $brithoncrmx ) {
@@ -64,9 +44,14 @@ birch_ns( 'brithoncrmx.sso.model', function( $ns ) {
             return $product;
         };
 
-        $ns->get_hkey = function() use ( $ns, $brithoncrmx ) {
-            $hkey = '_sEcR37_-t0KEn';
+        $ns->get_hkey = function() use ( $ns ) {
+            $hkey = '__bR17h0n-#sEcR37_-t0KEn';
             return $hkey;
+        };
+
+        $ns->get_common_key = function() use ( $ns ) {
+            $common_key = '#@Br1TH0n-C00ki3_KEY#@DSAF';
+            return $common_key;
         };
 
         $ns->get_iv = function( $size ) use ( $ns ) {
@@ -75,20 +60,18 @@ birch_ns( 'brithoncrmx.sso.model', function( $ns ) {
         };
 
         $ns->perform_server_validation = function( $token, $timestamp ) use ( $ns ) {
-            $expiration_seconds = 60;
+            $expiration_seconds = 600;
             $hkey = $ns->get_hkey();
             $product_name = $ns->get_product_name();
 
             $timestamp = intval( $timestamp );
 
             if ( $timestamp + $expiration_seconds < time() ) {
-                $ts = time();
-                echo "EXPIRED($ts).\n";
+                echo 'expired.';
                 return false;
             }
 
             $answer = hash_hmac( 'sha256', "$product_name-$timestamp", $hkey );
-            echo "ANSWER=$answer\n";
             if ( $token === $answer ) {
                 return true;
             }
@@ -113,83 +96,117 @@ birch_ns( 'brithoncrmx.sso.model', function( $ns ) {
             return $result;
         };
 
-        $ns->user_login = function() use ( $ns ) {
-            if ( !isset( $_POST['token'] ) ) {
-                $ns->return_error_msg( __( 'Empty validation token!', 'brithoncrmx' ) );
+        $ns->verfiy_login_state = function() use ( $ns ) {
+            if ( !isset( $_COOKIE['BRITHON_USER'] ) ) {
+                return false;
             }
 
-            $token = $_POST['token'];
-            $creds_str = $_POST['creds'];
+            $user_cookie = $_COOKIE['BRITHON_USER'];
+            $result = $ns->decrypt( $user_cookie, $ns->get_common_key() );
+            $data = json_decode( $result );
 
-            if ( !$ns->perform_server_validation( $token ) ) {
-                $ns->return_error_msg( __( 'Invalid token', 'brithoncrmx' ) );
+            if ( gettype( $data ) !== 'object' ) {
+                return false;
             }
 
-            $creds = json_decode( $ns->decrypt( $creds_str, $token ) );
+            $credential = $data->creds;
+            $key = $data->key;
+            $credential = $ns->decrypt( $credential, $key );
+            $credential = json_decode( $credential );
 
-            if ( !isset( $creds['user_login'] ) ) {
-                $ns->return_error_msg( __( 'Empty username!', 'brithoncrmx' ) );
-            }
-            if ( !isset( $creds['user_password'] ) ) {
-                $ns->return_error_msg( __( 'Empty password!', 'brithoncrmx' ) );
-            }
-            if ( !isset( $creds['remember'] ) ) {
-                $creds['remebmer'] = false;
-            }
+            $current_user = wp_get_current_user();
+            $user = get_user_by( 'login', $credential->user_login );
 
-            $user = wp_signon( $creds, false );
-            if ( is_wp_error( $user ) ) {
-                $ns->return_error_msg( $user->get_error_message() );
+            if ( ! $current_user && $user ) {
+                wp_set_current_user( $user->ID );
+                wp_set_auth_cookie( $user->ID, $credential->remember );
+                return $user->ID;
+            } else if ( $user && $current_user->user_login !== $credential->user_login ) {
+                wp_clear_auth_cookie();
+                wp_set_current_user( $user->ID );
+                wp_set_auth_cookie( $user->ID, $credential->remember );
+                return $user->ID;
+            } else {
+                return $user->ID;
             }
-
-            die( json_encode( $user ) );
         };
-
 
         $ns->user_register = function() use ( $ns, $brithoncrmx ) {
 
             $token = $_POST['token'];
             $creds_str = $_POST['creds'];
+            $timestamp = $_POST['time'];
 
-            if ( !$ns->perform_server_validation( $token ) ) {
+            if ( !$ns->perform_server_validation( $token, $timestamp ) ) {
                 $ns->return_error_msg( __( 'Invalid token', 'brithoncrmx' ) );
             }
 
             $creds = json_decode( $ns->decrypt( $creds_str, $token ) );
 
-            if ( ! isset( $creds['user_login'] ) ) {
+            if ( ! isset( $creds->user_login ) ) {
                 $ns->return_error_msg( __( 'Empty username!', 'brithoncrmx' ) );
             }
-            if ( ! isset( $creds['user_pass'] ) ) {
+            if ( ! isset( $creds->user_pass ) ) {
                 $ns->return_error_msg( __( 'Empty password!', 'brithoncrmx' ) );
             }
-            if ( ! isset( $creds['user_email'] ) ) {
+            if ( ! isset( $creds->user_email ) ) {
                 $ns->return_error_msg( __( 'Empty email address!', 'brithoncrmx' ) );
             }
-            if ( ! isset( $creds['first_name'] ) ) {
+            if ( ! isset( $creds->first_name ) ) {
                 $ns->return_error_msg( __( 'First name required!', 'brithoncrmx' ) );
             }
-            if ( ! isset( $creds['last_name'] ) ) {
+            if ( ! isset( $creds->last_name ) ) {
                 $ns->return_error_msg( __( 'Last name required!', 'brithoncrmx' ) );
             }
-            if ( ! isset( $creds['organization'] ) ) {
+            if ( ! isset( $creds->organization ) ) {
                 $ns->return_error_msg( __( 'Organization required!', 'brithoncrmx' ) );
             }
 
             $user_id = wp_insert_user( $creds );
 
             if ( ! is_wp_error( $user_id ) ) {
-                add_user_meta( $user_id, 'organization', $creds['organization'] );
+                add_user_meta( $user_id, 'organization', $creds->organization );
 
-                $creds = array_merge( $creds, array( 'remebmer' => true ) );
+                $login_data = array(
+                    'user_login' => $creds->user_login,
+                    'user_password' => $creds->user_pass,
+                    'remember' => true
+                );
 
-                $usr = wp_signon( $creds, false );
+                $usr = wp_signon( $login_data, false );
 
                 die( json_encode( $usr ) );
 
             } else {
-                $ns->return_err_msg( $user_id->get_error_message( $user_id->get_error_code() ) );
+                $ns->return_error_msg( $user_id->get_error_message( $user_id->get_error_code() ) );
             }
+        };
+
+        $ns->get_user_info = function() use ( $ns ) {
+            $user = wp_get_current_user();
+            $resp = $ns->request(
+                $ns->get_mainsite_url() . '/wp-admin/admin-ajax.php?action=brithoncrm_get_user_info',
+                'POST', array( 'user' => $user->user_login ) );
+
+            die( $resp );
+        };
+
+        $ns->get_user_subscriptions = function() use ( $ns ) {
+            $user = wp_get_current_user();
+            $resp = $ns->request(
+                $ns->get_mainsite_url() . '/wp-admin/admin-ajax.php?action=get_user_subscriptions',
+                'POST', array( 'product' => $ns->get_product_name(), 'user' => $user->user_login ) );
+
+            die( $resp );
+        };
+
+        $ns->get_user_order = function () use ( $ns ) {
+            $user = wp_get_current_user();
+            $resp = $ns->request(
+                $ns->get_mainsite_url() . '/wp-admin/admin-ajax.php?action=get_user_order',
+                'POST', array( 'product' => $ns->get_product_name(), 'user'=>$user->user_login ) );
+
+            die( $resp );
         };
 
         $ns->get_mainsite_url = function( $local_port = '8080' ) use ( $ns ) {
@@ -232,6 +249,16 @@ birch_ns( 'brithoncrmx.sso.model', function( $ns ) {
         };
 
         $ns->request = function( $url, $method, $data, $accept = '*/*' ) use ( $ns ) {
+            if ( gettype( $data ) === 'array' ) {
+                $query_str = '';
+                foreach ( $data as $key => $value ) {
+                    $key = urlencode( $key );
+                    $value = urlencode( $value );
+                    $query_str .= "$key=$value&";
+                }
+                $data = $query_str;
+            }
+
             $context = array(
                 'http' => array(
                     'method' => $method,
